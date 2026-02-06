@@ -493,4 +493,8 @@ if st.button(texts["buttons"]["generate"], type="primary", use_container_width=T
     if not st.session_state.name.strip() or not st.session_state.email.strip():
         st.error(texts["errors"]["required"])
     else:
-        theme_color = tuple(int(st.session_state.theme_color.lstrip('#')[i:i+2], 16) for 
+        theme_color = tuple(
+    int(st.session_state.theme_color.lstrip('#')[i:i+2], 16)
+    for i in (0, 2, 4)
+)
+
