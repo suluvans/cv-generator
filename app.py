@@ -1,15 +1,14 @@
 import streamlit as st
 from fpdf import FPDF
-import base64
-import re
 from datetime import datetime
 import io
+import base64
 
 # ────────────────────────────────────────────────
 # SAYFA AYARLARI & TEMEL STİL
 # ────────────────────────────────────────────────
 st.set_page_config(
-    page_title="Ultimate Professional CV Builder 2026",
+    page_title="Ultimate Professional CV Builder",
     page_icon="📄✨",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -46,17 +45,18 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ────────────────────────────────────────────────
-# DİL DESTEĞİ (daha fazla dil eklenebilir)
+# DİL DESTEĞİ (TAM TÜRKÇE VE İNGİLİZCE)
 # ────────────────────────────────────────────────
 LANGUAGES = {
     "Türkçe": {
-        "app_title": "🚀 Ultimate Profesyonel CV Oluşturucu 2025",
-        "sidebar": {
-            "language": "Dil Seçimi",
-            "theme": "Tema Rengi",
-            "photo": "Profil Fotoğrafı Ekle",
-            "template": "Şablon Seçimi"
-        },
+        "app_title": "🚀 Ultimate Profesyonel CV Oluşturucu",
+        "sidebar_title": "Ayarlar",
+        "language_label": "Dil",
+        "theme_label": "Ana Tema Rengi",
+        "photo_label": "Profil Fotoğrafı (isteğe bağlı)",
+        "photo_caption": "Önizleme",
+        "photo_info": "En iyi sonuç için fotoğrafı 1:1 oranında (kare) yükleyin.",
+        "caption": "ATS dostu, modern CV oluşturucu",
         "sections": {
             "personal": "Kişisel Bilgiler",
             "contact": "İletişim Bilgileri",
@@ -89,65 +89,122 @@ LANGUAGES = {
             "gpa": "Not Ortalaması (isteğe bağlı)",
             "skill": "Yetenek (örn: Python – İleri Seviye)",
             "lang": "Dil (örn: İngilizce)",
-            "level": "Seviye (A1–C2 / Başlangıç–Anadil)"
+            "level": "Seviye (A1–C2 / Başlangıç–Anadil)",
+            "cert_name": "Sertifika Adı / Veren Kurum",
+            "skill_inp": "Yetenek ekle (örn: Python – Uzman)",
+            "lang_inp": "Dil ekle (örn: İngilizce – C1)",
+            "awards_publications_volunteer": "Bu bölümleri aynı multi_entry_section mantığıyla genişletebilirsiniz."
         },
         "buttons": {
             "add": "Ekle",
             "remove": "Sil",
             "generate": "📄 PDF Oluştur & İndir",
-            "preview": "Önizleme Gör"
+            "preview": "Önizleme Gör",
+            "add_cert": "+ Sertifika Ekle",
+            "add_skill": "+ Yetenek",
+            "add_lang": "+ Dil"
         },
         "tooltips": {
             "bullet": "Her maddeyi yeni satıra yazın. Otomatik • işareti eklenecek.",
             "required": "Bu alan zorunludur."
-        }
+        },
+        "help": {
+            "summary": "Başarılarınızı sayısal verilerle destekleyin (örn: satışları %38 artırdım)"
+        },
+        "errors": {
+            "required": "Ad Soyad ve E-posta alanları zorunludur."
+        },
+        "success": "CV başarıyla oluşturuldu! 🎉",
+        "download_label": "📥 CV'yi PDF olarak İndir"
     },
-    # İngilizce çeviri (kısmen – tam çevirmek isterseniz deepL veya benzeri kullanabilirsiniz)
     "English": {
-        "app_title": "🚀 Ultimate Professional CV Builder 2025",
-        # ... aynı mantıkla İngilizce karşılıklarını ekleyin
-        # Aşağıda sadece Türkçe kullandım, İngilizce'yi siz tamamlayabilirsiniz
-        # Dili gerçekten değiştirsin diye dinamik hale getiriyoruz
-with st.sidebar:
-    # Sidebar başlığı dile göre değişsin
-    st.title("Ayarlar" if st.session_state.lang == "Türkçe" else "Settings")
-    
-    selected_lang = st.radio(
-        "Dil / Language",
-        ["Türkçe", "English"],
-        index=0 if st.session_state.lang == "Türkçe" else 1,
-        key="dil_secimi_radio" # key önemli, yoksa hata verir
-    )
-    
-    if selected_lang != st.session_state.lang:
-        st.session_state.lang = selected_lang
-        st.rerun() # sayfayı yenileyerek değişikliği uygula
-
-# texts artık seçilen dile göre dinamik olacak
-texts = LANGUAGES[st.session_state.lang]
-
+        "app_title": "🚀 Ultimate Professional CV Builder",
+        "sidebar_title": "Settings",
+        "language_label": "Language",
+        "theme_label": "Main Theme Color",
+        "photo_label": "Profile Photo (optional)",
+        "photo_caption": "Preview",
+        "photo_info": "For best results, upload a square (1:1) photo.",
+        "caption": "ATS-friendly, modern CV builder",
+        "sections": {
+            "personal": "Personal Information",
+            "contact": "Contact Information",
+            "summary": "Professional Summary / Career Objective",
+            "experience": "Work Experience",
+            "education": "Education",
+            "certificates": "Certificates & Credentials",
+            "skills": "Skills",
+            "languages": "Languages",
+            "projects": "Projects",
+            "publications": "Publications & Articles",
+            "volunteer": "Volunteer Experience & Social Responsibility",
+            "awards": "Awards & Achievements",
+            "references": "References",
+            "additional": "Additional Information / Interests"
+        },
+        "placeholders": {
+            "name": "Full Name",
+            "title": "Current / Target Title (e.g. Senior Data Scientist)",
+            "summary": "Introduce yourself professionally in 4–8 sentences...",
+            "company": "Company / Organization",
+            "position": "Position / Title",
+            "period": "Date range (e.g. Jan 2022 – Present)",
+            "location": "City, Country",
+            "description": "List your achievements and responsibilities in bullets...",
+            "project_name": "Project Name",
+            "tech_stack": "Technologies used (e.g. React, Node.js, AWS)",
+            "degree": "Degree / Major (e.g. Computer Engineering Bachelor's)",
+            "school": "School / University",
+            "gpa": "GPA (optional)",
+            "skill": "Skill (e.g. Python – Advanced Level)",
+            "lang": "Language (e.g. English)",
+            "level": "Level (A1–C2 / Beginner–Native)",
+            "cert_name": "Certificate Name / Issuing Organization",
+            "skill_inp": "Add skill (e.g. Python – Expert)",
+            "lang_inp": "Add language (e.g. English – C1)",
+            "awards_publications_volunteer": "Expand these sections with the same multi_entry_section logic."
+        },
+        "buttons": {
+            "add": "Add",
+            "remove": "Remove",
+            "generate": "📄 Generate & Download PDF",
+            "preview": "View Preview",
+            "add_cert": "+ Add Certificate",
+            "add_skill": "+ Add Skill",
+            "add_lang": "+ Add Language"
+        },
+        "tooltips": {
+            "bullet": "Write each item on a new line. Bullet • will be added automatically.",
+            "required": "This field is required."
+        },
+        "help": {
+            "summary": "Support your achievements with quantitative data (e.g. increased sales by 38%)"
+        },
+        "errors": {
+            "required": "Full Name and Email fields are required."
+        },
+        "success": "CV generated successfully! 🎉",
+        "download_label": "📥 Download PDF"
     }
 }
-
-# Varsayılan olarak Türkçe başlıyoruz
-if "lang" not in st.session_state:
-    st.session_state.lang = "Türkçe"
-
-texts = LANGUAGES["Türkçe"] # İngilizce desteği tamamlanırsa burayı dinamik yapabilirsiniz
 
 # ────────────────────────────────────────────────
 # SESSION STATE YÖNETİMİ
 # ────────────────────────────────────────────────
 keys = [
-    "name", "title", "photo", "summary",
+    "lang", "name", "title", "photo", "summary",
     "experiences", "educations", "certificates", "projects",
     "publications", "volunteering", "awards", "references",
-    "skills", "languages", "additional"
+    "skills", "languages", "additional", "theme_color", "email", "phone", "linkedin", "github"
 ]
 
 for k in keys:
     if k not in st.session_state:
-        if "experiences" in k or "educations" in k or "projects" in k or "certificates" in k:
+        if k == "lang":
+            st.session_state[k] = "Türkçe"
+        elif k == "theme_color":
+            st.session_state[k] = "#2b6cb0"
+        elif "experiences" in k or "educations" in k or "projects" in k or "certificates" in k or "publications" in k or "volunteering" in k or "awards" in k or "references" in k:
             st.session_state[k] = []
         elif "skills" in k or "languages" in k:
             st.session_state[k] = {}
@@ -158,107 +215,168 @@ for k in keys:
 # SIDEBAR
 # ────────────────────────────────────────────────
 with st.sidebar:
-    st.title("Ayarlar")
-    selected_lang = st.radio("Dil", ["Türkçe", "English"], index=0)
+    st.title(LANGUAGES[st.session_state.lang]["sidebar_title"])
+    selected_lang = st.radio(
+        LANGUAGES[st.session_state.lang]["language_label"],
+        ["Türkçe", "English"],
+        index=0 if st.session_state.lang == "Türkçe" else 1
+    )
     if selected_lang != st.session_state.lang:
         st.session_state.lang = selected_lang
         st.rerun()
 
-    st.session_state.theme_color = st.color_picker("Ana Tema Rengi", "#2b6cb0")
+texts = LANGUAGES[st.session_state.lang]
 
-    uploaded_photo = st.file_uploader("Profil Fotoğrafı (isteğe bağlı)", type=["jpg","jpeg","png"])
-    if uploaded_photo:
-        st.session_state.photo = uploaded_photo.read()
-        st.image(st.session_state.photo, width=180, caption="Önizleme")
+st.session_state.theme_color = st.color_picker(
+    texts["theme_label"],
+    st.session_state.theme_color
+)
 
-    st.info("En iyi sonuç için fotoğrafı 1:1 oranında (kare) yükleyin.")
+uploaded_photo = st.file_uploader(
+    texts["photo_label"],
+    type=["jpg", "jpeg", "png"]
+)
+if uploaded_photo:
+    st.session_state.photo = uploaded_photo.read()
+    st.image(st.session_state.photo, width=180, caption=texts["photo_caption"])
+
+st.info(texts["photo_info"])
 
 # ────────────────────────────────────────────────
 # ANA EKRAN – FORMLAR
 # ────────────────────────────────────────────────
 st.title(texts["app_title"])
-st.caption("2025 standartlarına uygun, ATS dostu, modern CV oluşturucu")
+st.caption(texts["caption"])
 
 # ── Kişisel Bilgiler ───────────────────────────────
 with st.expander(texts["sections"]["personal"], expanded=True):
     col1, col2 = st.columns([3,2])
-    st.session_state.name = col1.text_input("Ad Soyad **", value=st.session_state.name, placeholder=texts["placeholders"]["name"])
-    st.session_state.title = col2.text_input("Unvan / Hedef Pozisyon", value=st.session_state.title, placeholder=texts["placeholders"]["title"])
+    st.session_state.name = col1.text_input(
+        "Full Name / Ad Soyad **" if st.session_state.lang == "English" else "Ad Soyad **",
+        value=st.session_state.name,
+        placeholder=texts["placeholders"]["name"]
+    )
+    st.session_state.title = col2.text_input(
+        "Title / Unvan" if st.session_state.lang == "English" else "Unvan / Hedef Pozisyon",
+        value=st.session_state.title,
+        placeholder=texts["placeholders"]["title"]
+    )
 
 # ── İletişim ───────────────────────────────────────
 with st.expander(texts["sections"]["contact"], expanded=True):
     cols = st.columns([2,2,2,1])
-    email = cols[0].text_input("E-posta **", key="email")
-    phone = cols[1].text_input("Telefon", key="phone")
-    linkedin = cols[2].text_input("LinkedIn URL", key="linkedin")
-    github = cols[3].text_input("GitHub", key="github")
+    st.session_state.email = cols[0].text_input(
+        "Email / E-posta **",
+        key="email",
+        value=st.session_state.get("email", "")
+    )
+    st.session_state.phone = cols[1].text_input(
+        "Phone / Telefon",
+        key="phone",
+        value=st.session_state.get("phone", "")
+    )
+    st.session_state.linkedin = cols[2].text_input(
+        "LinkedIn URL",
+        key="linkedin",
+        value=st.session_state.get("linkedin", "")
+    )
+    st.session_state.github = cols[3].text_input(
+        "GitHub",
+        key="github",
+        value=st.session_state.get("github", "")
+    )
 
 # ── Profesyonel Özet ──────────────────────────────
 with st.expander(texts["sections"]["summary"], expanded=True):
     st.session_state.summary = st.text_area(
-        "Kariyer Özeti (4–8 cümle önerilir)",
+        "Career Summary / Kariyer Özeti (4–8 sentences / cümle önerilir)" if st.session_state.lang == "English" else "Kariyer Özeti (4–8 cümle önerilir)",
         value=st.session_state.summary,
         height=140,
         placeholder=texts["placeholders"]["summary"],
-        help="Başarılarınızı sayısal verilerle destekleyin (örn: satışları %38 artırdım)"
+        help=texts["help"]["summary"]
     )
 
 # ── Çoklu Giriş Yardımcı Fonksiyonu ───────────────
-def multi_entry_section(section_key, title, placeholders, max_entries=6):
+def multi_entry_section(section_key, title, max_entries=6):
     st.subheader(title)
     container = st.container()
 
     if len(st.session_state[section_key]) < max_entries:
-        if container.button(f"+ {texts['buttons']['add']} {title.lower()}", key=f"add_{section_key}"):
+        add_label = f"+ {texts['buttons']['add']} {title.lower()}"
+        if container.button(add_label, key=f"add_{section_key}"):
             st.session_state[section_key].append({
-                "company": "", "position": "", "period": "", "location": "", "desc": ""
+                "position": "", "company": "", "period": "", "location": "", "desc": ""
             })
             st.rerun()
 
     for i, entry in enumerate(st.session_state[section_key]):
         with st.expander(f"{entry.get('position','???')} — {entry.get('company','???')}", expanded=(i==0)):
             c1, c2 = st.columns(2)
-            entry["position"] = c1.text_input("Pozisyon / Rol", value=entry["position"], key=f"{section_key}_{i}_pos")
-            entry["company"] = c2.text_input("Kurum / Şirket", value=entry["company"], key=f"{section_key}_{i}_comp")
+            entry["position"] = c1.text_input(
+                "Position / Pozisyon" if st.session_state.lang == "English" else "Pozisyon / Rol",
+                value=entry["position"],
+                key=f"{section_key}_{i}_pos",
+                placeholder=texts["placeholders"]["position"]
+            )
+            entry["company"] = c2.text_input(
+                "Company / Kurum" if st.session_state.lang == "English" else "Kurum / Şirket",
+                value=entry["company"],
+                key=f"{section_key}_{i}_comp",
+                placeholder=texts["placeholders"]["company"]
+            )
 
-            c1, c2, c3 = st.columns([2,2,1.5])
-            entry["period"] = c1.text_input("Tarih Aralığı", value=entry["period"], key=f"{section_key}_{i}_per", placeholder="Oca 2021 – Haz 2024 ya da 2022 – Günümüz")
-            entry["location"] = c2.text_input("Konum", value=entry["location"], key=f"{section_key}_{i}_loc")
-            
-            if container.button(texts["buttons"]["remove"], key=f"del_{section_key}_{i}"):
-                st.session_state[section_key].pop(i)
-                st.rerun()
+            c1, c2 = st.columns(2)
+            entry["period"] = c1.text_input(
+                "Period / Tarih Aralığı" if st.session_state.lang == "English" else "Tarih Aralığı",
+                value=entry["period"],
+                key=f"{section_key}_{i}_per",
+                placeholder=texts["placeholders"]["period"]
+            )
+            entry["location"] = c2.text_input(
+                "Location / Konum" if st.session_state.lang == "English" else "Konum",
+                value=entry["location"],
+                key=f"{section_key}_{i}_loc",
+                placeholder=texts["placeholders"]["location"]
+            )
 
             entry["desc"] = st.text_area(
-                "Açıklama / Başarılar (her satıra bir madde)",
+                "Description / Açıklama (bullets / madde madde)" if st.session_state.lang == "English" else "Açıklama / Başarılar (her satıra bir madde)",
                 value=entry["desc"],
                 height=140,
                 key=f"{section_key}_{i}_desc",
                 help=texts["tooltips"]["bullet"]
             )
 
+            if st.button(texts["buttons"]["remove"], key=f"del_{section_key}_{i}"):
+                st.session_state[section_key].pop(i)
+                st.rerun()
+
 # İş Deneyimi
 with st.expander(texts["sections"]["experience"], expanded=False):
-    multi_entry_section("experiences", texts["sections"]["experience"], texts["placeholders"])
+    multi_entry_section("experiences", texts["sections"]["experience"])
 
 # Eğitim
 with st.expander(texts["sections"]["education"]):
-    multi_entry_section("educations", texts["sections"]["education"], texts["placeholders"])
+    multi_entry_section("educations", texts["sections"]["education"])
 
 # Projeler
 with st.expander(texts["sections"]["projects"]):
-    multi_entry_section("projects", texts["sections"]["projects"], texts["placeholders"])
+    multi_entry_section("projects", texts["sections"]["projects"])
 
-# Sertifikalar (daha basit yapı)
+# Sertifikalar
 with st.expander(texts["sections"]["certificates"]):
-    if "certificates" not in st.session_state:
-        st.session_state.certificates = []
-    
     col1, col2 = st.columns([3,1])
-    new_cert = col1.text_input("Sertifika Adı / Veren Kurum", key="new_cert_name")
-    new_date = col2.date_input("Tarih", value=datetime.now().date(), key="new_cert_date")
-    
-    if st.button("+ Sertifika Ekle", key="add_cert"):
+    new_cert = col1.text_input(
+        "Certificate Name / Sertifika Adı" if st.session_state.lang == "English" else "Sertifika Adı / Veren Kurum",
+        key="new_cert_name",
+        placeholder=texts["placeholders"]["cert_name"]
+    )
+    new_date = col2.date_input(
+        "Date / Tarih" if st.session_state.lang == "English" else "Tarih",
+        value=datetime.now()
+    )
+
+    if st.button(texts["buttons"]["add_cert"], key="add_cert"):
         if new_cert.strip():
             st.session_state.certificates.append(f"{new_cert} — {new_date.strftime('%b %Y')}")
             st.rerun()
@@ -266,22 +384,25 @@ with st.expander(texts["sections"]["certificates"]):
     for i, cert in enumerate(st.session_state.certificates):
         col1, col2 = st.columns([5,1])
         col1.write(f"• {cert}")
-        if col2.button("×", key=f"del_cert_{i}", help="Sil"):
+        if col2.button("×", key=f"del_cert_{i}", help="Remove / Sil"):
             st.session_state.certificates.pop(i)
             st.rerun()
 
-# Yetenekler & Diller (tag-style)
+# Yetenekler & Diller
 with st.expander(texts["sections"]["skills"] + " & " + texts["sections"]["languages"]):
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown("**Yetenekler**")
-        skill_input = st.text_input("Yetenek ekle (örn: Python – Uzman)", key="skill_inp")
-        if st.button("+ Yetenek", key="add_skill"):
+        st.markdown("**Skills / Yetenekler**")
+        skill_input = st.text_input(
+            texts["placeholders"]["skill_inp"],
+            key="skill_inp"
+        )
+        if st.button(texts["buttons"]["add_skill"], key="add_skill"):
             if skill_input.strip():
                 parts = [p.strip() for p in skill_input.split("–")]
                 name = parts[0]
-                level = parts[1] if len(parts)>1 else ""
+                level = parts[1] if len(parts) > 1 else ""
                 st.session_state.skills[name] = level
                 st.rerun()
 
@@ -293,13 +414,16 @@ with st.expander(texts["sections"]["skills"] + " & " + texts["sections"]["langua
                 st.rerun()
 
     with col2:
-        st.markdown("**Diller**")
-        lang_input = st.text_input("Dil ekle (örn: İngilizce – C1)", key="lang_inp")
-        if st.button("+ Dil", key="add_lang"):
+        st.markdown("**Languages / Diller**")
+        lang_input = st.text_input(
+            texts["placeholders"]["lang_inp"],
+            key="lang_inp"
+        )
+        if st.button(texts["buttons"]["add_lang"], key="add_lang"):
             if lang_input.strip():
                 parts = [p.strip() for p in lang_input.split("–")]
                 name = parts[0]
-                level = parts[1] if len(parts)>1 else ""
+                level = parts[1] if len(parts) > 1 else ""
                 st.session_state.languages[name] = level
                 st.rerun()
 
@@ -310,9 +434,9 @@ with st.expander(texts["sections"]["skills"] + " & " + texts["sections"]["langua
                 del st.session_state.languages[lg]
                 st.rerun()
 
-# Diğer bölümler (kısaca – aynı mantıkla genişletebilirsiniz)
+# Diğer Bölümler
 with st.expander(texts["sections"]["awards"] + " / " + texts["sections"]["publications"] + " / " + texts["sections"]["volunteer"]):
-    st.info("Bu bölümleri aynı multi_entry_section mantığıyla genişletebilirsiniz.")
+    st.info(texts["placeholders"]["awards_publications_volunteer"])
 
 # ────────────────────────────────────────────────
 # PDF ÜRETİM SINIFI
@@ -338,10 +462,10 @@ class ModernPDF(FPDF):
         self.set_font("Helvetica", "", 9)
         self.set_text_color(220,220,220)
         parts = []
-        if email: parts.append(email)
-        if phone: parts.append(phone)
-        if linkedin: parts.append(linkedin.replace("https://",""))
-        if github: parts.append(github.replace("https://github.com/","GitHub: @"))
+        if st.session_state.email: parts.append(st.session_state.email)
+        if st.session_state.phone: parts.append(st.session_state.phone)
+        if st.session_state.linkedin: parts.append(st.session_state.linkedin.replace("https://",""))
+        if st.session_state.github: parts.append(st.session_state.github.replace("https://github.com/","GitHub: @"))
         self.cell(0, 6, " • ".join(parts), align="C")
 
     def section_title(self, title):
@@ -366,75 +490,7 @@ class ModernPDF(FPDF):
 # PDF OLUŞTURMA & İNDİRME
 # ────────────────────────────────────────────────
 if st.button(texts["buttons"]["generate"], type="primary", use_container_width=True):
-    if not st.session_state.name.strip() or not email.strip():
-        st.error("Ad Soyad ve E-posta alanları zorunludur.")
+    if not st.session_state.name.strip() or not st.session_state.email.strip():
+        st.error(texts["errors"]["required"])
     else:
-        pdf = ModernPDF(theme_color=tuple(int(st.session_state.theme_color.lstrip('#')[i:i+2], 16) for i in (0,2,4)))
-
-        pdf.add_page()
-        pdf.contact_line()
-
-        pdf.set_y(48)
-
-        # Özet
-        if st.session_state.summary.strip():
-            pdf.section_title("PROFESYONEL ÖZET")
-            pdf.multi_cell(0, 7, st.session_state.summary.strip())
-            pdf.ln(8)
-
-        # İş Deneyimi
-        if st.session_state.experiences:
-            pdf.section_title("İŞ DENEYİMİ")
-            for exp in st.session_state.experiences:
-                pdf.set_font("Helvetica", "B", 12)
-                pdf.cell(0, 7, f"{exp['position']} — {exp['company']}", ln=1)
-                pdf.set_font("Helvetica", "I", 10)
-                pdf.cell(0, 6, f"{exp['period']} • {exp['location']}", ln=1)
-                pdf.add_bullet_list(exp["desc"])
-                pdf.ln(4)
-
-        # Eğitim
-        if st.session_state.educations:
-            pdf.section_title("EĞİTİM")
-            for edu in st.session_state.educations:
-                pdf.set_font("Helvetica", "B", 12)
-                pdf.cell(0, 7, f"{edu['position']} — {edu['company']}", ln=1)
-                pdf.set_font("Helvetica", "I", 10)
-                pdf.cell(0, 6, f"{edu['period']} • {edu['location']}", ln=1)
-                pdf.add_bullet_list(edu["desc"])
-                pdf.ln(2)
-
-        # Yetenekler
-        if st.session_state.skills:
-            pdf.section_title("YETENEKLER")
-            skills_text = ", ".join([f"{k} ({v})" if v else k for k,v in st.session_state.skills.items()])
-            pdf.multi_cell(0, 7, skills_text)
-            pdf.ln(4)
-
-        # Diller
-        if st.session_state.languages:
-            pdf.section_title("DİLLER")
-            langs_text = ", ".join([f"{k} – {v}" if v else k for k,v in st.session_state.languages.items()])
-            pdf.multi_cell(0, 7, langs_text)
-            pdf.ln(4)
-
-        # Sertifikalar
-        if st.session_state.certificates:
-            pdf.section_title("SERTİFİKALAR")
-            pdf.add_bullet_list("\n".join(st.session_state.certificates))
-
-        pdf_bytes = pdf.output(dest='S').encode('latin-1', errors='replace')
-
-        st.download_button(
-            label="📥 CV'yi PDF olarak İndir",
-            data=pdf_bytes,
-            file_name=f"{st.session_state.name.replace(' ','_')}_CV_2025.pdf",
-            mime="application/pdf",
-            use_container_width=True
-        )
-
-        st.success("CV başarıyla oluşturuldu! 🎉")
-        st.balloons()
-
-st.markdown("<br><br>", unsafe_allow_html=True)
-st.caption
+        theme_color = tuple(int(st.session_state.theme_color.lstrip('#')[i:i+2], 16) for 
