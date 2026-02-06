@@ -1,119 +1,94 @@
 import streamlit as st
 from fpdf import FPDF
-docx dosyasından Document dosyasını içe aktar
-from io import BytesIO
 
-# Sayfa Genişliği ve Tema
-st.set_page_config(page_title="Profesyonel CV Ustası", page_icon="💼", layout="wide")
-
-# --- TASARIM (CSS) ---
-st.markdown("""
-<style>
-.main { background-color: #f5f7f9; }
-.stButton>button { width: 100%; border-radius: 5px; height: 3em; background-color: #007bff; color: white; }
-.stTextInput>div>div>input { border-radius: 5px; }
-</style>
-""", unsafe_allow_html=True)
+# Sayfa Ayarları
+st.set_page_config(page_title="Multi-Language CV Maker", page_icon="🌍")
 
 # --- DİL SÖZLÜĞÜ ---
-lang = st.sidebar.selectbox("🌍 Dil / Language", ["Türkçe", "English"])
-t = {
-Türkçe: {
-"header": "🏆 Profesyonel CV Oluşturucu",
-"kişisel": "👤 Kişisel Bilgiler",
-"edu": "🎓 Eğitim Bilgileri",
-"work": "💼 İşni",
-"beceriler": "🛠️Yetenekler & Sertifikalar",
-"özet": "📝 Kariyer Özeti",
-"isim": "Ad Soyad", "iş": "Meslek", "telefon": "Telefon", "sosyal": "LinkedIn/Github",
-"oluştur": "🚀 CV'yi Hazırla",
-"success": "✅ CV Başarıyla Hazırlandı!",
-"download_pdf": "📥 PDF Olarak İndir",
-"download_word": "📥 Word (DOCX) Olarak İndir"
-},
-"İngilizce": {
-"başlık": "🏆 Profesyonel CV Oluşturucu",
-"kişisel": "👤 Kişisel Bilgiler",
-"edu": "🎓 Eğitim",
-"iş": "💼 İş Deneyimi",
-"Beceriler": "🛠️ Beceriler ve Sertifikalar",
-"Özet": "📝 Kariyer Özeti",
-"İsim": "Tam Adı", "İş": "İş Unvanı", "Telefon": "Telefon", "Sosyal Medya": "LinkedIn/Github",
-"oluştur": "🚀 CV Oluştur",
-"Başarı": "✅ Özgeçmiş Başarıyla Oluşturuldu!",
-"download_pdf": "📥 PDF olarak indir",
-"download_word": "📥 Word olarak indir"
+languages = {
+    "Türkçe": {
+        "title": "🏆 Profesyonel CV Sihirbazı",
+        "personal": "👤 Kişisel Bilgiler",
+        "name": "Ad Soyad",
+        "job": "Meslek",
+        "edu": "📖 Eğitim",
+        "exp": "💼 Deneyim",
+        "skills": "🛠️ Yetenekler",
+        "summary": "📝 Özet",
+        "button": "🚀 CV'yi Oluştur",
+        "success": "Tebrikler! CV'niz hazır.",
+        "download": "📥 PDF İndir"
+    },
+    "English": {
+        "title": "🏆 Professional CV Builder",
+        "personal": "👤 Personal Information",
+        "name": "Full Name",
+        "job": "Job Title",
+        "edu": "📖 Education",
+        "exp": "💼 Experience",
+        "skills": "🛠️ Skills",
+        "summary": "📝 Summary",
+        "button": "🚀 Generate CV",
+        "success": "Congrats! Your CV is ready.",
+        "download": "📥 Download PDF"
+    }
 }
-}[lang]
 
-st.title(t["header"])
+# --- DİL SEÇİMİ ---
+lang_choice = st.sidebar.selectbox("Dil / Language", ["Türkçe", "English"])
+texts = languages[lang_choice]
 
-# --- GİRİŞ PANELİ ---
-st.container() ile:
-sütun1, sütun2 = st.sütunlar([1, 2])
-col1 ile:
-st.altbaşlık(t["kişisel"])
-isim = st.text_input(t["isim"])
-iş = st.text_input(t["iş"])
-e-posta = st.text_input("E-posta / Email")
-telefon = st.text_input(t["telefon"])
-sosyal = st.text_input(t["sosyal"])
-col2 ile:
-st.altbaşlık(t["özet"])
-özet = st.text_area(t["özet"], yükseklik=100)
-st.altbaşlık(t["edu"])
-edu = st.text_area(t["edu"], placeholder="Okul Adı - Bölüm - Yıl", height=100)
-
+st.title(texts["title"])
 st.markdown("---")
-sütun3, sütun4 = st.sütunlar(2)
-col3 ile:
-st.alt başlık(t["iş"])
-iş = st.text_area(t["iş"], placeholder="Şirket - Pozisyon - Süre - Görevler", yükseklik=150)
-col4 ile:
-st.altbaşlık(t["beceriler"])
-beceriler = st.text_area(t["beceriler"], placeholder="Python, SQL, Proje Yönetimi vb.", height=150)
 
-# --- DOSYA OLUŞTURMA FONKSİYONLARI ---
+# --- GİRİŞ ALANLARI ---
+st.sidebar.header(texts["personal"])
+name = st.sidebar.text_input(texts["name"])
+job = st.sidebar.text_input(texts["job"])
+email = st.sidebar.text_input("E-posta / Email")
+phone = st.sidebar.text_input("Tel")
 
-def make_pdf():
-pdf = FPDF()
-pdf.add_page()
-pdf.set_font("Arial", "B", 24)
-pdf.cell(0, 15, name, ln=True, align="C")
-pdf.set_font("Arial", "I", 14)
-pdf.cell(0, 10, job, ln=True, align="C")
-pdf.set_font("Arial", "", 10)
-pdf.cell(0, 5, f"{email} | {phone} | {social}", ln=True, align="C")
-pdf.ln(10)
-başlık için, [(t["summary"], özet), (t["edu"], eğitim), (t["work"], iş), (t["skills"], beceriler)] içindeki içerik:
-pdf.set_font("Arial", "B", 12)
-pdf.hücre(0, 10, başlık, ln=True)
-pdf.set_font("Arial", "", 11)
-pdf.multi_cell(0, 7, content)
-pdf.ln(5)
-pdf.output(dest="S").encode("latin-1", errors="replace") döndür
+col1, col2 = st.columns(2)
+with col1:
+    edu = st.text_area(texts["edu"])
+with col2:
+    exp = st.text_area(texts["exp"])
 
-def make_word():
-belge = Belge()
-doc.add_heading(name, 0)
-doc.add_paragraph(f"{iş}\n{e-posta} | {telefon} | {sosyal medya}")
-başlık için, [(t["summary"], özet), (t["edu"], eğitim), (t["work"], iş), (t["skills"], beceriler)] içindeki içerik:
-doc.add_heading(title, level=1)
-doc.add_paragraph(content)
-bio = BytesIO()
-belge.kaydet(biyografi)
-bio.getvalue() değerini döndür
+skills = st.text_input(texts["skills"])
+summary = st.text_area(texts["summary"])
 
-# --- AKSİYON BUTONU ---
-eğer st.button(t["generate"]):
-İsim ve e-posta adresi varsa:
-st.balonlar()
-st.başarı(t["başarı"])
-sütun_pdf, sütun_kelime = st.sütunlar(2)
-col_pdf ile:
-st.download_button(t["download_pdf"], data=make_pdf(), file_name="cv.pdf", mime="application/pdf")
-col_word ile:
-st.download_button(t["download_word"], data=make_word(), file_name="cv.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-başka:
-st.warning("Lütfen zorunlu alanları doldurun!")
+# --- PDF OLUŞTURMA ---
+def create_pdf():
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", "B", 20)
+    pdf.cell(0, 15, name.upper(), ln=True, align="C")
+    pdf.set_font("Arial", "I", 14)
+    pdf.cell(0, 10, job, ln=True, align="C")
+    pdf.ln(10)
+    
+    pdf.set_font("Arial", "B", 12)
+    sections = {
+        texts["summary"]: summary,
+        texts["edu"]: edu,
+        texts["exp"]: exp,
+        texts["skills"]: skills
+    }
+    
+    for title, content in sections.items():
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(0, 10, title.upper(), ln=True)
+        pdf.set_font("Arial", "", 11)
+        pdf.multi_cell(0, 8, content)
+        pdf.ln(5)
+    
+    return pdf.output(dest="S").encode("latin-1", errors="replace")
+
+# --- ÇALIŞTIR ---
+if st.button(texts["button"]):
+    if name and email:
+        pdf_bytes = create_pdf()
+        st.balloons()
+        st.success(texts["success"])
+        st.download_button(texts["download"], data=pdf_bytes, file_name="CV.pdf")
 
